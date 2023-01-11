@@ -16,6 +16,7 @@ export default class SignUp extends Component {
     const { fname, lname, email, password } = this.state;
     console.log(fname, lname, email, password);
     fetch("http://localhost:5000/register", {
+      action: "process",
       method: "POST",
       crossDomain: true,
       headers: {
@@ -39,6 +40,10 @@ export default class SignUp extends Component {
     return (
       <form onSubmit={this.handleSubmit}>
         <h3>Sign Up</h3>
+
+        <div className="mb-3">
+          <input type="hidden" name="_csrf" value="{{csrfToken}}"></input>
+        </div>
 
         <div className="mb-3">
           <label>First name</label>

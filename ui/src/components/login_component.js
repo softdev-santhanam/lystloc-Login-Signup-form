@@ -14,6 +14,7 @@ export default class Login extends Component {
     const { email, password } = this.state;
     console.log(email, password);
     fetch("http://localhost:5000/login-user", {
+      action: "process",
       method: "POST",
       crossDomain: true,
       headers: {
@@ -40,14 +41,18 @@ export default class Login extends Component {
     return (
       <div>
         <div>
-        <h1>Track your employees On and Off the field!</h1>
-        <p>
-          Invest more time on business growth and less time on sales operations
-          in just 4 easy steps!
-        </p>
+          <h1>Track your employees On and Off the field!</h1>
+          <p>
+            Invest more time on business growth and less time on sales
+            operations in just 4 easy steps!
+          </p>
         </div>
         <form onSubmit={this.handleSubmit}>
           <h3>Sign In</h3>
+
+          <div className="mb-3">
+            <input type="hidden" name="_csrf" value="{{csrfToken}}"></input>
+          </div>
 
           <div className="mb-3">
             <label>Email address</label>

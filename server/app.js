@@ -1,12 +1,32 @@
 const express = require("express");
+const csrf = require("csurf");
+const cookieParser = require("cookie-parser");
+const bodyParser = require("body-parser");
+
+var csrfProtection = csrf({ cookie: true });
+var parseForm = bodyParser.urlencoded({ extended: false });
+
 const app = express();
+app.set("view engine", "ejs");
+
+app.use(cookieParser());
+
 const mongoose = require("mongoose");
 app.use(express.json());
 const cors = require("cors");
 app.use(cors());
 const bcrypt = require("bcryptjs");
-app.set("view engine", "ejs");
+
 app.use(express.urlencoded({ extended: false }));
+
+app.use(function (err, res, next) {
+  if (err.code !== "EBADCSRFTOKEN") return next(err);
+  else (err.code !== "CSRFTOKEN");
+
+  // handle CSRF token errors here
+  res.status(403);
+  res.json({ err: "CSRF ERROR" }); // respond with JSON response
+});
 
 const jwt = require("jsonwebtoken");
 var nodemailer = require("nodemailer");
@@ -29,6 +49,9 @@ mongoose
 require("./userDetails");
 
 const User = mongoose.model("UserInfo");
+
+// Used to POST signUp data
+
 app.post("/register", async (req, res) => {
   const { fname, lname, email, password } = req.body;
 
@@ -51,6 +74,8 @@ app.post("/register", async (req, res) => {
   }
 });
 
+// Used to POST signIn data
+
 app.post("/login-user", async (req, res) => {
   const { email, password } = req.body;
 
@@ -71,6 +96,8 @@ app.post("/login-user", async (req, res) => {
   }
   res.json({ status: "error", error: "InvAlid Password" });
 });
+
+// Used to POST user data after sign in
 
 app.post("/userData", async (req, res) => {
   const { token } = req.body;
@@ -116,7 +143,7 @@ app.post("/forgot-password", async (req, res) => {
     var transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "adarsh438tcsckandivali@gmail.com",
+        user: "inovsandy@gmail.com",
         pass: "rmdklolcsmswvyfw",
       },
     });
@@ -139,7 +166,11 @@ app.post("/forgot-password", async (req, res) => {
   } catch (error) {}
 });
 
-app.get("/reset-password/:id/:token", async (req, res) => {
+// Here
+
+app.get("/reset-password/:id/:token", csrfProtection, async (req, res) => {
+  res.render("login", { csrfToken: req.csrfToken() });
+
   const { id, token } = req.params;
   console.log(req.params);
   const oldUser = await User.findOne({ _id: id });
@@ -156,32 +187,39 @@ app.get("/reset-password/:id/:token", async (req, res) => {
   }
 });
 
-app.post("/reset-password/:id/:token", async (req, res) => {
-  const { id, token } = req.params;
-  const { password } = req.body;
+app.post(
+  "/reset-password/:id/:token",
+  parseForm,
+  csrfProtection,
+  async (req, res) => {
+    res.send("csrf was required to get here");
 
-  const oldUser = await User.findOne({ _id: id });
-  if (!oldUser) {
-    return res.json({ status: "User Not Exists!!" });
-  }
-  const secret = JWT_SECRET + oldUser.password;
-  try {
-    const verify = jwt.verify(token, secret);
-    const encryptedPassword = await bcrypt.hash(password, 10);
-    await User.updateOne(
-      {
-        _id: id,
-      },
-      {
-        $set: {
-          password: encryptedPassword,
+    const { id, token } = req.params;
+    const { password } = req.body;
+
+    const oldUser = await User.findOne({ _id: id });
+    if (!oldUser) {
+      return res.json({ status: "User Not Exists!!" });
+    }
+    const secret = JWT_SECRET + oldUser.password;
+    try {
+      const verify = jwt.verify(token, secret);
+      const encryptedPassword = await bcrypt.hash(password, 10);
+      await User.updateOne(
+        {
+          _id: id,
         },
-      }
-    );
+        {
+          $set: {
+            password: encryptedPassword,
+          },
+        }
+      );
 
-    res.render("index", { email: verify.email, status: "verified" });
-  } catch (error) {
-    console.log(error);
-    res.json({ status: "Something Went Wrong" });
+      res.render("index", { email: verify.email, status: "verified" });
+    } catch (error) {
+      console.log(error);
+      res.json({ status: "Something Went Wrong" });
+    }
   }
-});
+);
