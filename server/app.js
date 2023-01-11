@@ -19,15 +19,6 @@ const bcrypt = require("bcryptjs");
 
 app.use(express.urlencoded({ extended: false }));
 
-app.use(function (err, res, next) {
-  if (err.code !== "EBADCSRFTOKEN") return next(err);
-  else (err.code !== "CSRFTOKEN");
-
-  // handle CSRF token errors here
-  res.status(403);
-  res.json({ err: "CSRF ERROR" }); // respond with JSON response
-});
-
 const jwt = require("jsonwebtoken");
 var nodemailer = require("nodemailer");
 
