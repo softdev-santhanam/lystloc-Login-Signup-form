@@ -18,6 +18,9 @@
   <body>
     <h1><%= email%></h1>
     <form action="" method="post">
+      <div className="mb-3">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}"></input>
+      </div>
       <input
         type="password"
         name="password"
